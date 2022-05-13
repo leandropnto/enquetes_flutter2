@@ -1,30 +1,9 @@
+import 'package:enquetes/data/http/http.dart';
+import 'package:enquetes/data/usecases/usecases.dart';
 import 'package:enquetes/domain/usecases/authentication.dart';
 import 'package:faker/faker.dart';
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
-
-class RemoteAuthentication {
-  final HttpClient httpClient;
-  final String url;
-
-  RemoteAuthentication({required this.httpClient, required this.url});
-
-  Future<void> auth(AuthenticationParams params) async {
-    await httpClient.request(
-      url: url,
-      method: 'post',
-      body: {'email': params.email, 'password': params.secret},
-    );
-  }
-}
-
-abstract class HttpClient {
-  Future<void> request({
-    required String url,
-    required String method,
-    Map? body,
-  });
-}
 
 class HttpClientSpy extends Mock implements HttpClient {
   When mockRequestCall() => when(() => request(
@@ -58,9 +37,8 @@ void main() {
     );
     await sut.auth(params);
 
-    verify(() => httpClient.request(
-        url: url,
-        method: 'post',
-        body: {'email': params.email, 'password': params.secret}));
+    verify(
+      () => httpClient.request(url: url, method: 'post', body: params.toJson()),
+    );
   });
 }
