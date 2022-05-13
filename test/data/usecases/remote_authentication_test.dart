@@ -38,7 +38,10 @@ void main() {
     await sut.auth(params);
 
     verify(
-      () => httpClient.request(url: url, method: 'post', body: params.toJson()),
+      () => httpClient.request(
+          url: url,
+          method: 'post',
+          body: RemoteAuthenticationParams.fromDomain(params).toJson()),
     );
   });
 }
