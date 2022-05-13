@@ -1,10 +1,7 @@
-import 'package:dartz/dartz.dart';
-
 import '../entities/entities.dart';
-import '../failures/failures.dart';
 
 abstract class Authentication {
-  Future<Either<AuthenticationFailure, AccountEntity>> auth({
+  Future<AccountEntity> auth({
     required AuthenticationParams params,
   });
 }
