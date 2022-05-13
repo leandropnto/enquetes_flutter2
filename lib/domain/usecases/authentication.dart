@@ -5,7 +5,13 @@ import '../failures/failures.dart';
 
 abstract class Authentication {
   Future<Either<AuthenticationFailure, AccountEntity>> auth({
-    required String email,
-    required String password,
+    required AuthenticationParams params,
   });
+}
+
+class AuthenticationParams {
+  final String email;
+  final String secret;
+
+  const AuthenticationParams({required this.email, required this.secret});
 }
