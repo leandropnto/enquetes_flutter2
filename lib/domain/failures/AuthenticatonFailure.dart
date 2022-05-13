@@ -1,0 +1,3 @@
+enum AuthenticationFailure {
+  serverError, badCredentials
+}
