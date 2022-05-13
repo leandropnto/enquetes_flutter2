@@ -1,5 +1,6 @@
 import 'package:enquetes/data/http/http.dart';
 import 'package:enquetes/data/usecases/usecases.dart';
+import 'package:enquetes/domain/helpers/helpers.dart';
 import 'package:enquetes/domain/usecases/authentication.dart';
 import 'package:faker/faker.dart';
 import 'package:test/test.dart';
@@ -14,27 +15,32 @@ class HttpClientSpy extends Mock implements HttpClient {
       ));
 
   void mockRequest() => mockRequestCall().thenAnswer((invocation) async {});
+
 //void mockRequest(dynamic data) => mockRequestCall().thenAnswer((_) async => data);
-//void mockRequestError(HttpError error) => this.mockRequestCall().thenThrow(error);
+  void mockRequestError(HttpError error) => mockRequestCall().thenThrow(error);
 }
 
 void main() {
   late HttpClientSpy httpClient;
   late String url;
   late RemoteAuthentication sut;
+  late AuthenticationParams params;
 
   setUp(() {
     httpClient = HttpClientSpy();
     httpClient.mockRequest();
+
+    params = AuthenticationParams(
+      email: faker.internet.email(),
+      secret: faker.internet.password(),
+    );
+
     url = faker.internet.httpUrl();
     sut = RemoteAuthentication(httpClient: httpClient, url: url);
   });
 
   test('Should call HttpClient with correct values', () async {
-    final params = AuthenticationParams(
-      email: faker.internet.email(),
-      secret: faker.internet.password(),
-    );
+
     await sut.auth(params);
 
     verify(
@@ -43,5 +49,13 @@ void main() {
           method: 'post',
           body: RemoteAuthenticationParams.fromDomain(params).toJson()),
     );
+  });
+
+  test('Should throw Unexpected error if httpClient returns 400', () async {
+    httpClient.mockRequestError(HttpError.badRequest);
+
+    final future = sut.auth(params);
+    expect(future, throwsA(DomainError.unexpected));
+
   });
 }
