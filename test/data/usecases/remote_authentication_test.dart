@@ -1,3 +1,4 @@
+import 'package:enquetes/domain/usecases/authentication.dart';
 import 'package:faker/faker.dart';
 import 'package:test/test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -8,21 +9,29 @@ class RemoteAuthentication {
 
   RemoteAuthentication({required this.httpClient, required this.url});
 
-  Future<void> auth() async {
-    await httpClient.request(url: url, method: 'post');
+  Future<void> auth(AuthenticationParams params) async {
+    await httpClient.request(
+      url: url,
+      method: 'post',
+      body: {'email': params.email, 'password': params.secret},
+    );
   }
 }
 
 abstract class HttpClient {
-  Future<void> request({required String url, required String method});
+  Future<void> request({
+    required String url,
+    required String method,
+    Map? body,
+  });
 }
 
 class HttpClientSpy extends Mock implements HttpClient {
   When mockRequestCall() => when(() => request(
         url: any(named: 'url'),
         method: any(named: 'method'),
-        /*body: any(named: 'body'),
-      headers: any(named: 'headers')*/
+        body: any(named: 'body'),
+        /*headers: any(named: 'headers')*/
       ));
 
   void mockRequest() => mockRequestCall().thenAnswer((invocation) async {});
@@ -43,8 +52,15 @@ void main() {
   });
 
   test('Should call HttpClient with correct values', () async {
-    await sut.auth();
+    final params = AuthenticationParams(
+      email: faker.internet.email(),
+      secret: faker.internet.password(),
+    );
+    await sut.auth(params);
 
-    verify(() => httpClient.request(url: url, method: 'post'));
+    verify(() => httpClient.request(
+        url: url,
+        method: 'post',
+        body: {'email': params.email, 'password': params.secret}));
   });
 }
