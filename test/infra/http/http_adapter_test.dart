@@ -1,23 +1,25 @@
 import 'dart:convert';
 
+import 'package:enquetes/data/http/http.dart';
 import 'package:faker/faker.dart';
-import 'package:http/http.dart';
+import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
 import 'package:test/test.dart';
 
-class ClientSpy extends Mock implements Client {
-  When mockPostCall() => when(() => this
-      .post(any(), body: any(named: 'body'), headers: any(named: 'headers')));
+class ClientSpy extends Mock implements http.Client {
+  When mockPostCall() => when(() =>
+      post(any(), body: any(named: 'body'), headers: any(named: 'headers')));
 
   void mockPost(int statusCode, {String body = '{"any_key":"any_value"}'}) =>
-      mockPostCall().thenAnswer((_) async => Response(body, statusCode));
+      mockPostCall().thenAnswer((_) async => http.Response(body, statusCode));
 }
 
-class HttpAdapter {
-  final Client client;
+class HttpAdapter implements HttpClient {
+  final http.Client client;
 
   HttpAdapter({required this.client});
 
+  @override
   Future<dynamic> request({
     required String url,
     required String method,
@@ -30,11 +32,20 @@ class HttpAdapter {
 
     final jsonBody = body != null ? jsonEncode(body) : null;
 
-    client.post(
+    final response = await client.post(
       Uri.parse(url),
       headers: headers,
       body: jsonBody,
     );
+
+    switch (response.statusCode) {
+      case 200:
+        return response.body.isNotEmpty ? jsonDecode(response.body) : null;
+      case 204:
+        return null;
+      default:
+        return response.body;
+    }
   }
 }
 
@@ -84,6 +95,33 @@ main() {
           headers: any(named: 'headers'),
         ),
       );
+    });
+
+    test('Should return data if post returns 200', () async {
+      final url = faker.internet.httpUrl();
+      client.mockPost(200);
+
+      final response = await sut.request(url: url, method: 'post');
+
+      expect(response, {'any_key': 'any_value'});
+    });
+
+    test('Should return null if posts returns 200 without data', () async {
+      final url = faker.internet.httpUrl();
+      client.mockPost(200, body: '');
+
+      final response = await sut.request(url: url, method: 'post');
+
+      expect(response, null);
+    });
+
+    test('Should return null if posts returns 204 with data', () async {
+      final url = faker.internet.httpUrl();
+      client.mockPost(204);
+
+      final response = await sut.request(url: url, method: 'post');
+
+      expect(response, null);
     });
   });
 }
