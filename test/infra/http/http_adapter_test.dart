@@ -1,6 +1,5 @@
-import 'dart:convert';
-
 import 'package:enquetes/data/http/http.dart';
+import 'package:enquetes/infra/http/http.dart';
 import 'package:faker/faker.dart';
 import 'package:http/http.dart' as http;
 import 'package:mocktail/mocktail.dart';
@@ -12,41 +11,8 @@ class ClientSpy extends Mock implements http.Client {
 
   void mockPost(int statusCode, {String body = '{"any_key":"any_value"}'}) =>
       mockPostCall().thenAnswer((_) async => http.Response(body, statusCode));
-}
 
-class HttpAdapter implements HttpClient {
-  final http.Client client;
-
-  HttpAdapter({required this.client});
-
-  @override
-  Future<dynamic> request({
-    required String url,
-    required String method,
-    Map? body,
-  }) async {
-    final headers = {
-      "content-type": "application/json",
-      "accept": "application/json",
-    };
-
-    final jsonBody = body != null ? jsonEncode(body) : null;
-
-    final response = await client.post(
-      Uri.parse(url),
-      headers: headers,
-      body: jsonBody,
-    );
-
-    switch (response.statusCode) {
-      case 200:
-        return response.body.isNotEmpty ? jsonDecode(response.body) : null;
-      case 204:
-        return null;
-      default:
-        return response.body;
-    }
-  }
+  void mockPostError() => when(() => mockPostCall().thenThrow(Exception()));
 }
 
 main() {
@@ -63,6 +29,15 @@ main() {
     sut = HttpAdapter(client: client);
   });
 
+  group('shared', () {
+    test('Should throws ServerError if invalid method is provided', () async {
+      final url = faker.internet.httpUrl();
+
+      final future = sut.request(url: url, method: 'invalid_method');
+
+      expect(future, throwsA(HttpError.serverError));
+    });
+  });
   group('post', () {
     test('Should call post with correct values', () async {
       final url = faker.internet.httpUrl();
@@ -122,6 +97,60 @@ main() {
       final response = await sut.request(url: url, method: 'post');
 
       expect(response, null);
+    });
+
+    test('Should return BadRequestError if posts returns 400', () async {
+      final url = faker.internet.httpUrl();
+      client.mockPost(400);
+
+      final future = sut.request(url: url, method: 'post');
+
+      expect(future, throwsA(HttpError.badRequest));
+    });
+
+    test('Should return ServerError if posts returns 500', () async {
+      final url = faker.internet.httpUrl();
+      client.mockPost(500);
+
+      final future = sut.request(url: url, method: 'post');
+
+      expect(future, throwsA(HttpError.serverError));
+    });
+
+    test('Should return unauthorized if posts returns 401', () async {
+      final url = faker.internet.httpUrl();
+      client.mockPost(401);
+
+      final future = sut.request(url: url, method: 'post');
+
+      expect(future, throwsA(HttpError.unauthorized));
+    });
+
+    test('Should return forbidden if posts returns 403', () async {
+      final url = faker.internet.httpUrl();
+      client.mockPost(403);
+
+      final future = sut.request(url: url, method: 'post');
+
+      expect(future, throwsA(HttpError.forbidden));
+    });
+
+    test('Should return not found if posts returns 404', () async {
+      final url = faker.internet.httpUrl();
+      client.mockPost(404);
+
+      final future = sut.request(url: url, method: 'post');
+
+      expect(future, throwsA(HttpError.notFound));
+    });
+
+    test('Should return server error if post throws', () async {
+      final url = faker.internet.httpUrl();
+      client.mockPostError();
+
+      final future = sut.request(url: url, method: 'post');
+
+      expect(future, throwsA(HttpError.serverError));
     });
   });
 }
