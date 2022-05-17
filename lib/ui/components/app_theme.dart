@@ -9,23 +9,34 @@ ThemeData makeAppTheme() {
   final disabledColor = Colors.grey[400];
   const dividerColor = Colors.grey;
   const textTheme = TextTheme(
-      headline1: TextStyle(
-          fontSize: 30, fontWeight: FontWeight.bold, color: primaryColorDark));
+    headline1: TextStyle(
+      fontSize: 30,
+      fontWeight: FontWeight.bold,
+      color: primaryColorDark,
+    ),
+  );
 
   const inputDecorationTheme = InputDecorationTheme(
-      enabledBorder: UnderlineInputBorder(
-          borderSide: BorderSide(color: primaryColorLight)),
-      focusedBorder:
-          UnderlineInputBorder(borderSide: BorderSide(color: primaryColor)),
-      alignLabelWithHint: true);
+    iconColor: primaryColorLight,
+    isCollapsed: true,
+    contentPadding: EdgeInsets.all(8),
+    enabledBorder: UnderlineInputBorder(
+      borderSide: BorderSide(color: primaryColorLight),
+    ),
+    focusedBorder: UnderlineInputBorder(
+      borderSide: BorderSide(color: primaryColor),
+    ),
+    alignLabelWithHint: true,
+  );
 
   final buttonTheme = ButtonThemeData(
-      colorScheme: const ColorScheme.light(primary: primaryColor),
-      buttonColor: primaryColor,
-      splashColor: primaryColorLight,
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
-      textTheme: ButtonTextTheme.primary,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)));
+    colorScheme: const ColorScheme.light(primary: primaryColor),
+    buttonColor: primaryColor,
+    splashColor: primaryColorLight,
+    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+    textTheme: ButtonTextTheme.primary,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+  );
 
   return ThemeData(
       primaryColor: primaryColor,
