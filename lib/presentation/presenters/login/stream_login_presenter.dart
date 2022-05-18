@@ -10,18 +10,38 @@ class StreamLoginPresenter {
 
   var _state = const LoginState(emailError: null);
 
+  set state(LoginState value) {
+    _state = value;
+    _controller.add(_state);
+  }
+
   Stream<String?> get emailErrorStream =>
-      _controller.stream.map((state) => state.emailError);
+      _controller.stream.map((state) => state.emailError).distinct();
+
+  Stream<String?> get passwordStream =>
+      _controller.stream.map((state) => state.passwordError).distinct();
+
+  Stream<bool> get isFormValidStream =>
+      _controller.stream.map((state) => state.isFormValid).distinct();
 
   StreamLoginPresenter({required Validation validation})
       : _validation = validation;
 
   void validateEmail(String email) {
-    _state = LoginState(
-      emailError: _validation.validate(field: 'email', value: email),
+    state = _state.copyWith(
+      email: email,
+      emailError: _validation.validate(
+        field: 'email',
+        value: email,
+      ),
     );
+  }
 
-    _controller.add(_state);
+  void validatePassword(String password) {
+    state = _state.copyWith(
+        password: password,
+        passwordError:
+            _validation.validate(field: 'password', value: password));
   }
 
   void dispose() {
