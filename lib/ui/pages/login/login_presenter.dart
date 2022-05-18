@@ -13,7 +13,7 @@ abstract class LoginPresenter {
 
   void validatePassword(String value);
 
-  void auth();
+  Future<void> auth();
 
   void dispose();
 }

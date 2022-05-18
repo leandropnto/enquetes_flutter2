@@ -1,8 +1,10 @@
 import 'dart:async';
 
+import 'package:enquetes/ui/pages/login/provider/login_provider.dart';
 import 'package:enquetes/ui/pages/pages.dart';
 import 'package:faker/faker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -16,21 +18,15 @@ void main() {
   late StreamController<bool> isLoadingController;
   late StreamController<String> mainErrorController;
 
-  tearDown(() {
-    emailErrorController.close();
-    passwordErrorController.close();
-    isFormValidController.close();
-    isLoadingController.close();
-    mainErrorController.close();
-  });
-
-  Future<void> loadPage(WidgetTester tester) async {
+  void initStreams() {
     emailErrorController = StreamController();
     passwordErrorController = StreamController();
     isFormValidController = StreamController();
     isLoadingController = StreamController();
     mainErrorController = StreamController();
+  }
 
+  void mockStreams() {
     when(() => presenter.emailErrorStream)
         .thenAnswer((invocation) => emailErrorController.stream);
 
@@ -46,7 +42,31 @@ void main() {
     when(() => presenter.mainErrorStream)
         .thenAnswer((_) => mainErrorController.stream);
 
-    final loginPage = MaterialApp(home: LoginPage(presenter: presenter));
+    when(() => presenter.auth()).thenAnswer((_) async => _);
+  }
+
+  void closeStreams() {
+    emailErrorController.close();
+    passwordErrorController.close();
+    isFormValidController.close();
+    isLoadingController.close();
+    mainErrorController.close();
+  }
+
+  tearDown(() {
+    closeStreams();
+  });
+
+  Future<void> loadPage(WidgetTester tester) async {
+    initStreams();
+    mockStreams();
+
+    final loginPage = ProviderScope(
+      overrides: [
+        loginPresenterProvider.overrideWithValue(presenter),
+      ],
+      child: MaterialApp(home: LoginPage(presenter: presenter)),
+    );
     await tester.pumpWidget(loginPage);
   }
 
@@ -171,8 +191,8 @@ void main() {
     final button = find.bySubtype<ElevatedButton>();
     await tester.ensureVisible(button);
     await tester.tap(button);
-
     await tester.pump();
+
     verify(() => presenter.auth()).called(1);
   });
 
